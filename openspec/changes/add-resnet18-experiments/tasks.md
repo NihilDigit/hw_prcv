@@ -2,10 +2,10 @@
 
 ## 1. 代码修改
 
-- [ ] 1.1 修改 `pspnet.py` 支持 ResNet18 预训练 + output_stride=32
-- [ ] 1.2 修改 `deeplabv3plus.py` 支持 ResNet18 预训练 + output_stride=32
-- [ ] 1.3 修改 `train_camvid.py` 添加 `--backbone` 参数
-- [ ] 1.4 实现 ResNet18 版本的 FCN（或使用简化方案）
+- [x] 1.1 修改 `pspnet.py` 支持 ResNet18 预训练 + output_stride=32
+- [x] 1.2 修改 `deeplabv3plus.py` 支持 ResNet18 预训练 + output_stride=32
+- [x] 1.3 修改 `train_camvid.py` 添加 `--backbone` 参数
+- [x] 1.4 实现 ResNet18 版本的 FCN（简化 head；output_stride=32）
 
 ## 2. ResNet18 实验
 
