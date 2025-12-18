@@ -1,0 +1,22 @@
+[
+  {
+    "model": "Plain-20",
+    "params": 269722,
+    "params_human": "269.7K"
+  },
+  {
+    "model": "Plain-56",
+    "params": 853018,
+    "params_human": "853.0K"
+  },
+  {
+    "model": "ResNet-20",
+    "params": 269722,
+    "params_human": "269.7K"
+  },
+  {
+    "model": "ResNet-56",
+    "params": 853018,
+    "params_human": "853.0K"
+  }
+]
