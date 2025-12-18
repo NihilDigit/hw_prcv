@@ -1,0 +1,32 @@
+# pixi environments
+.pixi/
+pixi.lock
+
+# Data (root level only)
+/data/
+
+# Experiments outputs
+experiments/*/logs/
+experiments/*/checkpoints/
+experiments/*/*.pth
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Report outputs
+report/*.pdf
+report/*.docx
