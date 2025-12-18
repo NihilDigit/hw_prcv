@@ -6,9 +6,8 @@ pixi.lock
 /data/
 
 # Experiments outputs
-experiments/*/logs/
-experiments/*/checkpoints/
-experiments/*/*.pth
+/experiments/
+!/experiments/.gitkeep
 
 # Python
 __pycache__/
@@ -30,3 +29,9 @@ Thumbs.db
 # Report outputs
 report/*.pdf
 report/*.docx
+
+# Local smoke/quick-run figures
+report/figures/resnet/smoke-*/
+
+# Private Record
+record.md

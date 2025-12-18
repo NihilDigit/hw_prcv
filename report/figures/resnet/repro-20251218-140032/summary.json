@@ -1,0 +1,58 @@
+{
+  "run_id": "repro-20251218-140032",
+  "run_dir": "/home/spencer/Codes/openspec_projects/prcv/experiments/resnet/reproduction/repro-20251218-140032",
+  "models": {
+    "plain20": {
+      "epochs": 200,
+      "last": {
+        "epoch": 200,
+        "train_loss": 0.025018471617920278,
+        "train_acc": 0.9926282051282052,
+        "test_loss": 0.4093310329355771,
+        "test_acc": 0.9115901898734177,
+        "lr": 0.0010000000000000002,
+        "epoch_time_sec": 2.90151309967041
+      },
+      "best_test_acc": 0.9126780063291139
+    },
+    "plain56": {
+      "epochs": 200,
+      "last": {
+        "epoch": 200,
+        "train_loss": 0.16071122794961318,
+        "train_acc": 0.9440705128205128,
+        "test_loss": 0.44951137749454645,
+        "test_acc": 0.8723299050632911,
+        "lr": 0.0010000000000000002,
+        "epoch_time_sec": 7.143798112869263
+      },
+      "best_test_acc": 0.8768789556962026
+    },
+    "resnet20": {
+      "epochs": 200,
+      "last": {
+        "epoch": 200,
+        "train_loss": 0.017961771022050807,
+        "train_acc": 0.9950120192307692,
+        "test_loss": 0.3939786745777613,
+        "test_acc": 0.9125791139240507,
+        "lr": 0.0010000000000000002,
+        "epoch_time_sec": 3.5483639240264893
+      },
+      "best_test_acc": 0.9143591772151899
+    },
+    "resnet56": {
+      "epochs": 200,
+      "last": {
+        "epoch": 200,
+        "train_loss": 0.0030425057101708193,
+        "train_acc": 0.9996394230769231,
+        "test_loss": 0.3232943370372434,
+        "test_acc": 0.9343354430379747,
+        "lr": 0.0010000000000000002,
+        "epoch_time_sec": 7.786469221115112
+      },
+      "best_test_acc": 0.935818829113924
+    }
+  }
+}

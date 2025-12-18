@@ -7,6 +7,7 @@ from .camvid import (
     rgb_to_class_id,
     class_id_to_rgb,
 )
+from .cifar10 import Cifar10Config, get_cifar10_dataloaders
 
 __all__ = [
     "CamVidDataset",
@@ -16,4 +17,6 @@ __all__ = [
     "CAMVID_11_COLORS",
     "rgb_to_class_id",
     "class_id_to_rgb",
+    "Cifar10Config",
+    "get_cifar10_dataloaders",
 ]

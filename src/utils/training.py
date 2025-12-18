@@ -9,6 +9,27 @@ import json
 import time
 
 
+def _cuda_headers_available() -> bool:
+    try:
+        from torch.utils.cpp_extension import CUDA_HOME  # type: ignore
+    except Exception:
+        CUDA_HOME = None  # type: ignore
+
+    candidates = []
+    if CUDA_HOME:
+        candidates.append(Path(CUDA_HOME) / "include" / "cuda.h")
+
+    candidates.extend(
+        [
+            Path("/usr/local/cuda/include/cuda.h"),
+            Path("/opt/cuda/include/cuda.h"),
+            Path("/usr/include/cuda.h"),
+        ]
+    )
+
+    return any(path.exists() for path in candidates)
+
+
 def setup_torch_optimizations():
     """设置 PyTorch 2.9 全局优化"""
     # TF32 加速矩阵运算 (RTX 30/40 系列)
@@ -41,7 +62,21 @@ def compile_model(model: nn.Module, mode: str = "reduce-overhead") -> nn.Module:
     Returns:
         编译后的模型
     """
-    return torch.compile(model, mode=mode)
+    try:
+        first_param = next(model.parameters(), None)
+        model_on_cuda = first_param is not None and first_param.is_cuda
+    except Exception:
+        model_on_cuda = False
+
+    if model_on_cuda and not _cuda_headers_available():
+        print("[WARN] CUDA headers (cuda.h) not found; skipping torch.compile() and using eager mode.")
+        return model
+
+    try:
+        return torch.compile(model, mode=mode)
+    except Exception as exc:  # pragma: no cover
+        print(f"[WARN] torch.compile() failed, falling back to eager mode: {exc}")
+        return model
 
 
 class AMPTrainer:
@@ -159,7 +194,3 @@ def save_checkpoint(model: nn.Module, optimizer: torch.optim.Optimizer,
     torch.save(checkpoint, path / "last.pth")
     if is_best:
         torch.save(checkpoint, path / "best.pth")
-
-
-# 初始化时自动设置优化
-setup_torch_optimizations()
