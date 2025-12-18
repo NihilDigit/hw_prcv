@@ -95,6 +95,8 @@ pixi run python code/resnet/plot_reproduction.py \
 
 ## 附录 D：原版论文
 
-原版论文 PDF 请见随附文件：`references/He2016_ResNet_CVPR.pdf`
+原版论文 PDF 请见随附文件：
 
+- `references/He2016_ResNet_CVPR.pdf`
+- `references/Ioffe2015_BatchNorm.pdf`
 
