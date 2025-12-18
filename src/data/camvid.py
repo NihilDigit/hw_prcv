@@ -1,4 +1,9 @@
-"""CamVid 数据集定义与加载器"""
+"""CamVid 数据集定义与加载器
+
+数据来源: https://github.com/alexgkendall/SegNet-Tutorial/tree/master/CamVid
+下载命令: git clone https://github.com/alexgkendall/SegNet-Tutorial.git --depth 1
+参考论文: Brostow et al. "Semantic Object Classes in Video: A High-Definition Ground Truth Database"
+"""
 
 import torch
 from torch.utils.data import Dataset, DataLoader
