@@ -1,0 +1,19 @@
+{
+  "split": "val",
+  "val_loss": 0.17218333568710548,
+  "miou": 0.7097376585006714,
+  "per_class_iou": {
+    "Sky": 0.9424787163734436,
+    "Building": 0.889514684677124,
+    "Pole": 0.06758985668420792,
+    "Road": 0.9686786532402039,
+    "Sidewalk": 0.8789141178131104,
+    "Tree": 0.9065927863121033,
+    "SignSymbol": 0.4188239276409149,
+    "Fence": 0.686375617980957,
+    "Car": 0.8166492581367493,
+    "Pedestrian": 0.5181280374526978,
+    "Bicyclist": 0.7133680582046509
+  },
+  "checkpoint": "experiments/segmentation/seg-r18-deeplabv3plus/best.pth"
+}

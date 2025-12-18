@@ -9,12 +9,12 @@
 
 ## 2. ResNet18 实验
 
-- [ ] 2.1 训练 PSPNet + ResNet18（50 epochs）
-- [ ] 2.2 训练 FCN + ResNet18（50 epochs）
-- [ ] 2.3 训练 DeepLabV3+ + ResNet18（50 epochs）
+- [x] 2.1 训练 PSPNet + ResNet18（50 epochs）
+- [x] 2.2 训练 FCN + ResNet18（50 epochs）
+- [x] 2.3 训练 DeepLabV3+ + ResNet18（50 epochs）
 
 ## 3. 结果分析
 
-- [ ] 3.1 对比 ResNet18 vs ResNet50 各模型表现
-- [ ] 3.2 分析 PPM/ASPP 在弱 backbone 下的贡献
-- [ ] 3.3 更新报告实验结果表格
+- [x] 3.1 对比 ResNet18 vs ResNet50 各模型表现
+- [x] 3.2 分析 PPM/ASPP 在弱 backbone 下的贡献
+- [x] 3.3 更新报告实验结果表格

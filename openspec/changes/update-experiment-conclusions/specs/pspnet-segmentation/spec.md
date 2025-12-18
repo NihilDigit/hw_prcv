@@ -1,40 +1,33 @@
-## ADDED Requirements
-
-### Requirement: 双 Backbone 对比实验
-系统 SHALL 支持 ResNet18 和 ResNet50 双 backbone 对比实验，以分析架构贡献与 backbone 强度的关系。
-
-#### Scenario: 强 backbone 下架构趋同
-- **WHEN** 使用 ResNet50 预训练 backbone 训练 PSPNet、FCN、DeepLabV3+
-- **THEN** 三者 mIoU 接近（差距 < 1pp），说明预训练 backbone 主导性能
-
-#### Scenario: 弱 backbone 下架构差异显现
-- **WHEN** 使用 ResNet18 预训练 backbone 训练 PSPNet、FCN、DeepLabV3+
-- **THEN** DeepLabV3+ 显著优于 PSPNet/FCN（差距 > 5pp）
-
-### Requirement: 架构贡献分析
-系统 SHALL 在报告中分析不同架构模块的贡献。
-
-#### Scenario: PPM 贡献分析
-- **WHEN** 对比 PSPNet 与 FCN 在相同 backbone 下的表现
-- **THEN** 报告 PPM 多尺度池化的实际贡献（或缺乏贡献）
-
-#### Scenario: Decoder 贡献分析
-- **WHEN** 对比 DeepLabV3+ 与其他模型
-- **THEN** 分析 Decoder 低层特征融合对边界恢复的作用
+# Delta Spec: PSPNet 城市街景语义分割（实验结论与分析结构更新）
 
 ## MODIFIED Requirements
 
-### Requirement: 失败案例分析
-系统 SHALL 分析模型预测失败的典型案例。
+### Requirement: 基线模型对比
+系统 SHALL 支持 PSPNet、FCN、DeepLabv3+ 在同一评测协议下进行对比实验，并覆盖至少两种 backbone 强度（强：ResNet50；弱：ResNet18）。
 
-#### Scenario: 小目标失败
-- **WHEN** 模型对行人、路牌等小目标预测错误
-- **THEN** 记录并分析失败原因
+#### Scenario: 双 backbone 对比表
+- **WHEN** 完成 ResNet50 与 ResNet18 两组实验
+- **THEN** 报告中给出每组 backbone 的对比表（mIoU + 训练配置要点 + run id）
 
-#### Scenario: 边界模糊
-- **WHEN** 模型在类别边界处预测模糊
-- **THEN** 对比不同模型的边界表现，特别是 Decoder 结构的优势
+## ADDED Requirements
 
-#### Scenario: 架构局限性分析
-- **WHEN** PSPNet 表现不如预期
-- **THEN** 分析 PPM 在小数据集/弱 backbone 下的局限性
+### Requirement: Backbone 强度分析
+系统 SHALL 对比强/弱 backbone 下模型表现差异，并给出可复现的结论与证据（来自训练日志与评测输出）。
+
+#### Scenario: ΔmIoU 分析
+- **WHEN** 取得 ResNet50 与 ResNet18 的 val mIoU
+- **THEN** 计算并解释每个模型的 ΔmIoU（强 backbone → 弱 backbone）
+
+### Requirement: 架构贡献分析
+系统 SHALL 分析 PPM（PSPNet）与 decoder（DeepLabv3+）在不同 backbone 强度下的相对贡献。
+
+#### Scenario: PPM vs Decoder 贡献对照
+- **WHEN** 同一 backbone 下得到 PSPNet、FCN、DeepLabv3+ 的 mIoU
+- **THEN** 在报告中给出差值对照（PSPNet-FCN、DeepLabv3+-PSPNet）并解释结论
+
+### Requirement: 报告结论更新
+系统 SHALL 在报告结论中反映对比实验的新发现（包括负面结果），并与失败案例分析一致。
+
+#### Scenario: 结论与失败案例一致
+- **WHEN** 更新第四章分析结构
+- **THEN** 第五章结论应明确概括 backbone 与结构贡献，并与 失败案例分析 的观察一致

@@ -1,12 +1,12 @@
-# 基于 PSPNet 的 CamVid 城市街景语义分割课程设计报告
+# 基于 PSPNet 的 CamVid 语义分割：实现与对照实验分析
 
 ---
 
 ## 摘要
 
-语义分割旨在对图像中每个像素进行类别预测，是自动驾驶场景理解等任务的关键基础。本报告以 CamVid 城市街景数据集为实验对象，实现并训练 PSPNet（Pyramid Scene Parsing Network）模型，利用 Pyramid Pooling Module 融合多尺度上下文信息以提升像素级解析能力。为确保结论可信，我们提供统一的数据预处理、训练配置与评测指标（mIoU），并支持与基线模型（FCN、DeepLabv3+）在同一评测协议下进行对比。报告给出定量结果、可视化预测对比与典型失败案例分析，讨论多尺度上下文与结构设计对分割性能的影响。
+语义分割旨在对图像中每个像素进行类别预测，是自动驾驶场景理解等任务的关键基础。本报告以 CamVid 城市街景数据集为实验对象，实现 PSPNet（Pyramid Scene Parsing Network）并完成训练、评测与可视化流程。在统一评测协议（mIoU）下，我们进一步引入强/弱两种 backbone（ResNet50/ResNet18），对 PSPNet、FCN 与 DeepLabv3+ 进行对照实验与结构贡献分析。实验表明：强 backbone 下 PPM 的边际增益较小，而弱 backbone 下 decoder 的低层特征融合对小目标与边界恢复更关键。报告给出定量结果、训练曲线、可视化对比与失败案例分析，形成可复现的结论。
 
-**关键词**：语义分割；PSPNet；CamVid；mIoU；多尺度上下文
+**关键词**：语义分割；PSPNet；CamVid；mIoU；对照实验；backbone
 
 ---
 
@@ -91,26 +91,33 @@ PPM 对输入特征图执行多分辨率的区域池化，得到不同尺度的�
 - Metric：mIoU
 - 训练轮数：50 epochs
 - 编译加速：默认开启 `torch.compile`
+- Backbone：默认使用 ImageNet 预训练权重（`--backbone-pretrained`，默认开启）
+- 学习率调度：PolyLR（power=0.9），按 iteration 衰减：`lr = base_lr × (1 - iter/max_iter)^0.9`
 
-三组对比实验使用相同的学习率与权重衰减（lr=0.01, weight_decay=1e-4），为显存与计算开销考虑，batch size 设为：
-
-- PSPNet：8
-- FCN：4
-- DeepLabv3+：4
+三组对比实验使用相同的学习率与权重衰减（lr=0.01, weight_decay=1e-4），为保证公平与显存可用性，batch size 统一设为 4。
 
 ## 3.4 复现实验命令
 
 ```bash
-# 训练 PSPNet（会在 experiments/segmentation/<run-id>/ 下生成日志与 checkpoint）
-pixi run python code/segmentation/train_camvid.py --model pspnet --epochs 50 --batch-size 8
+# ResNet50（强 backbone）三组对比
+pixi run python code/segmentation/train_camvid.py --model pspnet --backbone resnet50 --epochs 50 --batch-size 4 --run-id seg-v2-pspnet
+pixi run python code/segmentation/train_camvid.py --model fcn --backbone resnet50 --epochs 50 --batch-size 4 --run-id seg-v2-fcn
+pixi run python code/segmentation/train_camvid.py --model deeplabv3plus --backbone resnet50 --epochs 50 --batch-size 4 --run-id seg-v2-deeplabv3plus
+
+# ResNet18（弱 backbone）三组对比
+pixi run python code/segmentation/train_camvid.py --model pspnet --backbone resnet18 --epochs 50 --batch-size 4 --run-id seg-r18-pspnet
+pixi run python code/segmentation/train_camvid.py --model fcn --backbone resnet18 --epochs 50 --batch-size 4 --run-id seg-r18-fcn
+pixi run python code/segmentation/train_camvid.py --model deeplabv3plus --backbone resnet18 --epochs 50 --batch-size 4 --run-id seg-r18-deeplabv3plus
 
 # 生成训练曲线图（保存到 report/figures/segmentation/<run-id>/）
-pixi run python code/segmentation/plot_training_curves.py --run-dir experiments/segmentation/<run-id>
+pixi run python code/segmentation/plot_training_curves.py --run-dir experiments/segmentation/seg-v2-pspnet
+pixi run python code/segmentation/plot_training_curves.py --run-dir experiments/segmentation/seg-v2-fcn
+pixi run python code/segmentation/plot_training_curves.py --run-dir experiments/segmentation/seg-v2-deeplabv3plus
 
-# 评测并导出可视化（val/test）
-pixi run python code/segmentation/eval_camvid.py --model pspnet --split val \\
-  --checkpoint experiments/segmentation/<run-id>/best.pth \\
-  --out-dir report/figures/segmentation/<run-id>/eval_pspnet
+# 评测并导出可视化（val；输出 metrics.json + vis/）
+pixi run python code/segmentation/eval_camvid.py --model pspnet --backbone resnet50 --split val \\
+  --checkpoint experiments/segmentation/seg-v2-pspnet/best.pth \\
+  --out-dir report/figures/segmentation/seg-v2-pspnet/eval_pspnet
 ```
 
 ---
@@ -119,31 +126,55 @@ pixi run python code/segmentation/eval_camvid.py --model pspnet --split val \\
 
 ## 4.1 定量结果（mIoU）
 
-本节汇总三组对比实验在 CamVid val 集上的结果（以 best checkpoint 为准）。
+本节汇总两组 backbone（ResNet50/ResNet18）下三种模型在 CamVid val 集上的结果（以 best checkpoint 为准）。
 
-| 模型 | Backbone | Input size | mIoU (val) | Best epoch | 备注 |
+### 4.1.1 ResNet-50（强 backbone）
+
+| 模型 | Backbone | mIoU (val) | Best epoch | run id |
 |---|---|---:|---:|---|
-| PSPNet | ResNet-50 | 360×480 | 0.5539 | 27 | 本项目实现 |
-| FCN | ResNet-50 | 360×480 | 0.5874 | 49 | torchvision baseline |
-| DeepLabv3+ | ResNet-50 | 360×480 | 0.5927 | 34 | 本项目实现 |
+| PSPNet | ResNet-50 | 0.7534 | 48 | `seg-v2-pspnet` |
+| FCN | ResNet-50 | 0.7535 | 50 | `seg-v2-fcn` |
+| DeepLabv3+ | ResNet-50 | **0.7603** | 48 | `seg-v2-deeplabv3plus` |
 
-可以看到，在本次从零训练配置下：
+可以看到，在强 backbone（ResNet50）+ 预训练的条件下：
 
-- DeepLabv3+ 取得最高的 mIoU（0.5927），说明 ASPP 多尺度上下文 + decoder 边界恢复对 CamVid 有明显收益。
-- FCN 作为基线表现非常强（0.5874），在小数据集上收敛稳定。
-- PSPNet 在本实现与训练策略下略低于 FCN，但仍显著优于烟雾测试结果，且在大类（Sky/Road/Building）上表现良好。
+- PSPNet 与 FCN 的 mIoU 几乎完全一致（0.7534 vs 0.7535），说明 PPM 的增益在该设定下非常有限。
+- DeepLabv3+ 仅小幅领先（+0.0069），模型结构差异被强 backbone 的表征能力显著“掩盖”。
 
-进一步观察 per-class IoU，难点主要集中在小目标类别（Pole、SignSymbol、Pedestrian）。对三种模型的关键类别 IoU 对比如下：
+### 4.1.2 ResNet-18（弱 backbone）
 
-| 类别 | PSPNet IoU | FCN IoU | DeepLabv3+ IoU |
-|---|---:|---:|---:|
-| Pole | 0.0000 | 0.0121 | 0.0319 |
-| SignSymbol | 0.0816 | 0.0869 | 0.1854 |
-| Pedestrian | 0.2447 | 0.2549 | 0.2549 |
+| 模型 | Backbone | mIoU (val) | Best epoch | run id |
+|---|---|---:|---:|---|
+| PSPNet | ResNet-18 | 0.6191 | 40 | `seg-r18-pspnet` |
+| FCN | ResNet-18 | 0.6108 | 38 | `seg-r18-fcn` |
+| DeepLabv3+ | ResNet-18 | **0.7097** | 45 | `seg-r18-deeplabv3plus` |
 
-这表明 DeepLabv3+ 在小目标与边界细节上更占优势，而 PSPNet/FCN 在大区域类别上差距不大。
+在弱 backbone（ResNet18）下，各模型整体性能下降，但结构差异开始显著体现：DeepLabv3+ 相比 PSPNet/FCN 有接近 9 个百分点的优势。
 
-### 4.1.1 烟雾测试结果（流程连通性验证）
+## 4.2 Backbone 强度分析：ResNet50 vs ResNet18
+
+将 ResNet50 → ResNet18 的下降幅度（ΔmIoU）对比：
+
+- PSPNet：0.7534 → 0.6191（-0.1343）
+- FCN：0.7535 → 0.6108（-0.1426）
+- DeepLabv3+：0.7603 → 0.7097（-0.0506）
+
+DeepLabv3+ 在弱 backbone 下的鲁棒性更强，说明 decoder 的低层特征融合能显著缓解 backbone 表达能力不足带来的细节缺失。
+
+## 4.3 架构贡献分析：PPM vs Decoder
+
+用“同 backbone 下的 mIoU 差值”近似衡量模块贡献：
+
+- PPM（PSPNet vs FCN）
+  - ResNet50：0.7534 - 0.7535 ≈ 0.0000（几乎无增益）
+  - ResNet18：0.6191 - 0.6108 = +0.0083（增益很小，接近噪声范围）
+- Decoder（DeepLabv3+ vs PSPNet）
+  - ResNet50：0.7603 - 0.7534 = +0.0069（小幅提升）
+  - ResNet18：0.7097 - 0.6191 = **+0.0906**（显著提升）
+
+因此，本项目的关键结论是：在 CamVid 这种小规模数据集上，**decoder（低层细节融合/边界恢复）往往比 PPM/ASPP 的多尺度池化更关键**；强 backbone + 预训练会进一步弱化“多尺度池化模块”的边际收益。
+
+### 4.1.3 烟雾测试结果（流程连通性验证）
 
 为验证训练-评测-可视化流程可用，我们进行了 1 个 epoch 的 smoke run：
 
@@ -154,31 +185,39 @@ pixi run python code/segmentation/eval_camvid.py --model pspnet --split val \\
 
 该结果仅用于验证流程连通性；正式报告请以更长训练轮数（例如 50/100 epochs）后的结果为准。
 
-## 4.2 训练曲线
+## 4.4 训练曲线
 
 训练 loss 与 val mIoU 曲线（由 `plot_training_curves.py` 生成）：
 
-- PSPNet：`figures/segmentation/seg-20251218-pspnet/camvid_loss.png`、`figures/segmentation/seg-20251218-pspnet/camvid_miou.png`
-- FCN：`figures/segmentation/seg-20251218-fcn/camvid_loss.png`、`figures/segmentation/seg-20251218-fcn/camvid_miou.png`
-- DeepLabv3+：`figures/segmentation/seg-20251218-deeplabv3plus/camvid_loss.png`、`figures/segmentation/seg-20251218-deeplabv3plus/camvid_miou.png`
+### ResNet-50（强 backbone）
 
-PSPNet（本次正式实验）曲线：
+- PSPNet：`figures/segmentation/seg-v2-pspnet/camvid_loss.png`、`figures/segmentation/seg-v2-pspnet/camvid_miou.png`
+- FCN：`figures/segmentation/seg-v2-fcn/camvid_loss.png`、`figures/segmentation/seg-v2-fcn/camvid_miou.png`
+- DeepLabv3+：`figures/segmentation/seg-v2-deeplabv3plus/camvid_loss.png`、`figures/segmentation/seg-v2-deeplabv3plus/camvid_miou.png`
 
-![PSPNet Loss](figures/segmentation/seg-20251218-pspnet/camvid_loss.png)
+PSPNet 曲线：
 
-![PSPNet mIoU](figures/segmentation/seg-20251218-pspnet/camvid_miou.png)
+![PSPNet Loss](figures/segmentation/seg-v2-pspnet/camvid_loss.png)
+
+![PSPNet mIoU](figures/segmentation/seg-v2-pspnet/camvid_miou.png)
 
 FCN（baseline）曲线：
 
-![FCN Loss](figures/segmentation/seg-20251218-fcn/camvid_loss.png)
+![FCN Loss](figures/segmentation/seg-v2-fcn/camvid_loss.png)
 
-![FCN mIoU](figures/segmentation/seg-20251218-fcn/camvid_miou.png)
+![FCN mIoU](figures/segmentation/seg-v2-fcn/camvid_miou.png)
 
 DeepLabv3+（强对照）曲线：
 
-![DeepLabv3+ Loss](figures/segmentation/seg-20251218-deeplabv3plus/camvid_loss.png)
+![DeepLabv3+ Loss](figures/segmentation/seg-v2-deeplabv3plus/camvid_loss.png)
 
-![DeepLabv3+ mIoU](figures/segmentation/seg-20251218-deeplabv3plus/camvid_miou.png)
+![DeepLabv3+ mIoU](figures/segmentation/seg-v2-deeplabv3plus/camvid_miou.png)
+
+### ResNet-18（弱 backbone）
+
+- PSPNet：`figures/segmentation/seg-r18-pspnet/camvid_loss.png`、`figures/segmentation/seg-r18-pspnet/camvid_miou.png`
+- FCN：`figures/segmentation/seg-r18-fcn/camvid_loss.png`、`figures/segmentation/seg-r18-fcn/camvid_miou.png`
+- DeepLabv3+：`figures/segmentation/seg-r18-deeplabv3plus/camvid_loss.png`、`figures/segmentation/seg-r18-deeplabv3plus/camvid_miou.png`
 
 烟雾测试曲线（流程验证）：
 
@@ -186,45 +225,63 @@ DeepLabv3+（强对照）曲线：
 
 ![CamVid mIoU](figures/segmentation/smoke-pspnet-20251218/camvid_miou.png)
 
-## 4.3 可视化对比
+## 4.5 可视化对比
 
 从验证集抽取若干样例，导出输入图、GT 与预测结果的并排对比（由 `eval_camvid.py` 导出）：
 
-- `figures/segmentation/seg-20251218-pspnet/eval_pspnet/vis/`
-- `figures/segmentation/seg-20251218-fcn/eval_fcn/vis/`
-- `figures/segmentation/seg-20251218-deeplabv3plus/eval_deeplabv3plus/vis/`
+### ResNet-50（强 backbone）
+
+- `figures/segmentation/seg-v2-pspnet/eval_pspnet/vis/`
+- `figures/segmentation/seg-v2-fcn/eval_fcn/vis/`
+- `figures/segmentation/seg-v2-deeplabv3plus/eval_deeplabv3plus/vis/`
 
 以样例 000 为例（输入/GT 为相同图像，仅展示不同模型的预测）：
 
 | 输入 | GT | PSPNet | FCN | DeepLabv3+ |
 |---|---|---|---|---|
-| ![](figures/segmentation/seg-20251218-pspnet/eval_pspnet/vis/000_image.png) | ![](figures/segmentation/seg-20251218-pspnet/eval_pspnet/vis/000_gt.png) | ![](figures/segmentation/seg-20251218-pspnet/eval_pspnet/vis/000_pred.png) | ![](figures/segmentation/seg-20251218-fcn/eval_fcn/vis/000_pred.png) | ![](figures/segmentation/seg-20251218-deeplabv3plus/eval_deeplabv3plus/vis/000_pred.png) |
+| ![](figures/segmentation/seg-v2-pspnet/eval_pspnet/vis/000_image.png) | ![](figures/segmentation/seg-v2-pspnet/eval_pspnet/vis/000_gt.png) | ![](figures/segmentation/seg-v2-pspnet/eval_pspnet/vis/000_pred.png) | ![](figures/segmentation/seg-v2-fcn/eval_fcn/vis/000_pred.png) | ![](figures/segmentation/seg-v2-deeplabv3plus/eval_deeplabv3plus/vis/000_pred.png) |
+
+### ResNet-18（弱 backbone）
+
+- `figures/segmentation/seg-r18-pspnet/eval_pspnet/vis/`
+- `figures/segmentation/seg-r18-fcn/eval_fcn/vis/`
+- `figures/segmentation/seg-r18-deeplabv3plus/eval_deeplabv3plus/vis/`
 
 烟雾测试可视化示例目录：
 
 - `report/figures/segmentation/smoke-pspnet-20251218/eval_pspnet/vis/`
 
-## 4.4 失败案例分析（示例写法）
+## 4.6 失败案例分析（结合新发现）
 
-从 per-class IoU 可以观察到，三种模型的“难点类别”高度一致：Pole、SignSymbol、Pedestrian 等小目标类别 IoU 较低；而 Sky、Road、Building、Tree 等大区域类别 IoU 较高。这符合 CamVid 场景中类别尺度差异与类别不均衡的特征。
+从 per-class IoU 可以观察到，难点类别主要集中在小目标与细长结构（Pole、SignSymbol、Pedestrian），而大区域类别（Sky、Road、Building、Tree）普遍较高。这符合 CamVid 中类别尺度差异与类别不均衡的特征。
 
 结合可视化结果，典型失败模式包括：
 
-1. **小目标漏检（Pole/SignSymbol）**：目标像素占比极低，且常与背景（建筑/树木）纹理混杂，容易被平滑掉。DeepLabv3+ 在该类上的 IoU 明显高于 PSPNet/FCN，说明 decoder + ASPP 的组合对小目标与边界有更好的恢复能力。
-2. **边界模糊（Road/Sidewalk/Fence 交界）**：上采样插值与特征混合导致边界不锐利。DeepLabv3+ 的边界更连贯；PSPNet 预测更偏向大区域一致性。
-3. **相似纹理混淆（Tree vs Building/Sign）**：光照变化与遮挡导致纹理与颜色分布相近，错误常集中在边缘区域或遮挡处。
+1. **小目标与细节恢复不足（ResNet18 下更明显）**：在弱 backbone 下，PSPNet/FCN 的 Pedestrian IoU 仅约 0.21，而 DeepLabv3+ 能提升到约 0.52，说明 decoder 的低层特征融合对细节恢复更关键。
+2. **Pole 类别极难（细长结构 + 极少像素）**：ResNet18 下 PSPNet 的 Pole IoU 直接为 0；即使在 ResNet50 下 Pole 也仅约 0.08～0.14，提示需要更强的边界建模或更高分辨率特征。
+3. **边界模糊（Road/Sidewalk/Fence 交界）**：上采样与特征混合导致边界不锐利。DeepLabv3+ 的边界更连贯；PSPNet 预测更偏向大区域一致性。
+4. **相似纹理混淆（Tree vs Building/Sign）**：光照变化与遮挡导致纹理与颜色分布相近，错误常集中在边缘区域或遮挡处。
 
 ---
 
 # 第五章 结论
 
-本文基于 CamVid 数据集实现了 PSPNet 语义分割系统，提供统一的训练、评测与可视化流程，并支持与 FCN、DeepLabv3+ 等基线进行对比。后续工作可在更长训练轮数、更强 backbone、以及更精细的边界建模（如引入边界损失或更强 decoder）方面进一步提升性能。
+本文基于 CamVid 数据集实现了 PSPNet 语义分割系统，提供统一的训练、评测与可视化流程，并支持与 FCN、DeepLabv3+ 等基线进行对比。通过引入强/弱两种 backbone 的对照实验，我们得到如下结论：
+
+1. 在强 backbone（ResNet50）下，PSPNet 与 FCN 的性能几乎一致，PPM 的边际增益非常有限。
+2. 在弱 backbone（ResNet18）下，DeepLabv3+ 体现出显著优势，decoder 的低层特征融合对小目标与边界恢复更关键。
+
+后续工作可围绕更高分辨率特征、更强 decoder、边界相关损失，以及更大规模数据集/训练轮数进一步提升难点类别（如 Pole、SignSymbol、Pedestrian）的表现。
 
 ---
 
 # 参考文献
 
-（按最终使用的论文与引用格式补全）
+1. Zhao H, Shi J, Qi X, Wang X, Jia J. Pyramid Scene Parsing Network. In: CVPR. 2017.
+2. Long J, Shelhamer E, Darrell T. Fully Convolutional Networks for Semantic Segmentation. In: CVPR. 2015.
+3. Chen L C, Zhu Y, Papandreou G, Schroff F, Adam H. Encoder-Decoder with Atrous Separable Convolution for Semantic Image Segmentation (DeepLabv3+). In: ECCV. 2018.
+4. He K, Zhang X, Ren S, Sun J. Deep Residual Learning for Image Recognition. In: CVPR. 2016.
+5. Brostow G J, Shotton J, Fauqueur J, Cipolla R. Segmentation and Recognition Using Structure from Motion Point Clouds. In: ECCV. 2008.（CamVid 数据集相关工作）
 
 ---
 
