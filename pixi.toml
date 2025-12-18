@@ -2,7 +2,7 @@
 authors = ["nihildigit <nihildigit@outlook.com>"]
 channels = ["conda-forge"]
 name = "prcv"
-platforms = ["linux-64"]
+platforms = ["linux-64", "win-64"]
 version = "0.1.0"
 
 [tasks]
@@ -25,4 +25,3 @@ tensorboard = ">=2.20.0,<3"
 
 [pypi-dependencies]
 cityscapesscripts = ">=2.2.4, <3"
-
