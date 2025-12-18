@@ -1,0 +1,19 @@
+{
+  "split": "val",
+  "val_loss": 1.3505265315373738,
+  "miou": 0.19853271543979645,
+  "per_class_iou": {
+    "Sky": 0.8925637006759644,
+    "Building": 0.43625202775001526,
+    "Pole": 0.0,
+    "Road": 0.7226288914680481,
+    "Sidewalk": 0.0017425105907022953,
+    "Tree": 0.017086872830986977,
+    "SignSymbol": 0.0,
+    "Fence": 0.0,
+    "Car": 0.11358590424060822,
+    "Pedestrian": 0.0,
+    "Bicyclist": 0.0
+  },
+  "checkpoint": "experiments/segmentation/smoke-pspnet-20251218/best.pth"
+}
