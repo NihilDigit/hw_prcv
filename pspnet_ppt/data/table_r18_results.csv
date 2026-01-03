@@ -1,0 +1,4 @@
+model,backbone,miou_val,best_epoch,run_id
+PSPNet,ResNet-18,0.6191,40,seg-r18-pspnet
+FCN,ResNet-18,0.6108,38,seg-r18-fcn
+DeepLabv3+,ResNet-18,0.7097,45,seg-r18-deeplabv3plus
