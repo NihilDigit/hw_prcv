@@ -4,8 +4,6 @@
 1) ResNet 在 CIFAR-10 上的论文复现
 2) PSPNet 在 CamVid 上的语义分割实现与对比实验（FCN / DeepLabv3+）
 
-本 README 写得啰嗦一些，适合基础较浅的读者从零开始理解项目结构和怎么跑起来。
-
 ## 1. 两个实验分别做了什么？
 
 ### A. ResNet（CIFAR-10 复现）
@@ -77,38 +75,116 @@ pixi run python -c "import torch, torchvision, gradio; print('ok')"
 
 ## 4. ResNet 实验如何复现？
 
-（具体脚本可自行补充，这里只给结构理解）
+### 4.1 数据准备（CIFAR-10）
+项目默认使用 torchvision 的 CIFAR-10 下载逻辑（训练脚本会在首次运行时自动下载）。  
+如果你所在环境无法联网，请提前准备数据并把 CIFAR-10 放到 `data/` 下。
 
-核心模型代码：
+### 4.2 训练与复现流程（建议步骤）
+下面是一个“从零开始”的完整流程示例。具体参数可按需求调整。
+
+1) 进入项目根目录  
+2) 运行训练（示例命令）
+
+```bash
+# 以 20 层 ResNet 为例（可根据脚本参数调整）
+pixi run python code/resnet/train_cifar.py --model resnet20 --epochs 200 --batch-size 128
+
+# 以 56 层 ResNet 为例
+pixi run python code/resnet/train_cifar.py --model resnet56 --epochs 200 --batch-size 128
+
+# 以 20 层 Plain 为例
+pixi run python code/resnet/train_cifar.py --model plain20 --epochs 200 --batch-size 128
+
+# 以 56 层 Plain 为例
+pixi run python code/resnet/train_cifar.py --model plain56 --epochs 200 --batch-size 128
+```
+
+> 说明：训练脚本路径/参数若与你本地版本不一致，请以 `code/resnet/README.md` 或脚本 `--help` 为准。
+
+### 4.3 结果输出位置
+训练完成后，日志与模型权重默认会输出到：  
+`experiments/resnet/...`
+
+曲线与可视化（若有）通常会输出到：  
+`report/figures/`
+
+### 4.4 报告与 PPT
+- 报告：`report/resnet_report.md`
+- PPT：`resnet_ppt/resnet_ppt.pptx`
+
+### 4.5 代码入口（核心模型）
 - `src/models/resnet_cifar.py`
-
-报告复现结果已经在：
-- `report/resnet_report.md`
-- 曲线图在 `report/figures/`（若有）
-
-PPT 在：
-- `resnet_ppt/resnet_ppt.pptx`
 
 ## 5. PSPNet 实验如何复现？
 
-请先阅读更详细的说明：
-- `code/segmentation/README.md`
+### 5.1 数据准备（CamVid）
+CamVid 数据目录结构要求如下（与你的实际路径一致即可）：  
 
-该文件包含：
-- CamVid 数据目录结构
-- 训练命令（PSPNet / FCN / DeepLabv3+）
-- 曲线绘制命令
-- 评测 + 可视化命令
+```
+data/camvid/
+  train/      *.png
+  trainannot/ *.png
+  val/        *.png
+  valannot/   *.png
+  test/       *.png
+  testannot/  *.png
+```
+
+### 5.2 训练命令（完整示例）
+以下命令与 `code/segmentation/README.md` 保持一致：
+
+```bash
+# PSPNet（默认 ResNet-50 backbone）
+pixi run python code/segmentation/train_camvid.py --model pspnet --epochs 50 --batch-size 4
+
+# PSPNet + ResNet-18（弱 backbone 对比）
+pixi run python code/segmentation/train_camvid.py --model pspnet --backbone resnet18 --epochs 50 --batch-size 4
+
+# FCN baseline
+pixi run python code/segmentation/train_camvid.py --model fcn --epochs 50 --batch-size 4
+
+# FCN + ResNet-18
+pixi run python code/segmentation/train_camvid.py --model fcn --backbone resnet18 --epochs 50 --batch-size 4
+
+# DeepLabv3+（本项目实现）
+pixi run python code/segmentation/train_camvid.py --model deeplabv3plus --epochs 50 --batch-size 4
+
+# DeepLabv3+ + ResNet-18
+pixi run python code/segmentation/train_camvid.py --model deeplabv3plus --backbone resnet18 --epochs 50 --batch-size 4
+```
+
+### 5.3 曲线绘制
+
+```bash
+pixi run python code/segmentation/plot_training_curves.py --run-dir experiments/segmentation/<run-id>
+```
+
+曲线默认保存到：  
+`report/figures/segmentation/<run-id>/`
+
+### 5.4 评测 + 可视化
+
+```bash
+pixi run python code/segmentation/eval_camvid.py --model pspnet --split val \
+  --checkpoint experiments/segmentation/<run-id>/best.pth \
+  --out-dir report/figures/segmentation/<run-id>/eval_pspnet
+```
+
+### 5.5 报告与 PPT
+- 报告：`report/pspnet_report.md`
+- PPT 包：`pspnet_ppt/`（含 `psp_ppt.pptx` 与素材）
 
 ## 6. 分割演示前端（Gradio）
 
-这个前端会加载训练好的权重，输入一张图，输出分割结果：
+这个前端会加载训练好的权重，输入一张图，输出分割结果。
+
+### 6.1 启动方式
 
 ```bash
 pixi run python app.py
 ```
 
-前端需要的权重路径（默认）：
+### 6.2 需要的权重（默认路径）
 - `experiments/segmentation/seg-v2-pspnet/best.pth`
 - `experiments/segmentation/seg-r18-pspnet/best.pth`
 - `experiments/segmentation/seg-v2-fcn/best.pth`
@@ -116,7 +192,7 @@ pixi run python app.py
 - `experiments/segmentation/seg-v2-deeplabv3plus/best.pth`
 - `experiments/segmentation/seg-r18-deeplabv3plus/best.pth`
 
-前端还会从：
+### 6.3 需要的输入数据
 - `data/camvid/test/` 读取测试图片样例
 
 如果没有权重或数据集，前端会提示 “Missing Weights”。
