@@ -19,10 +19,10 @@ scienceplots = ">=2.2.0,<3"
 tqdm = ">=4.67.1,<5"
 pyyaml = ">=6.0.3,<7"
 pandas = ">=2.3.3,<3"
-pillow = ">=12.0.0,<13"
 opencv = ">=4.12.0,<5"
 tensorboard = ">=2.20.0,<3"
 gradio = ">=6.2.0,<7"
+pillow = ">=11.3.0,<12"
 
 [pypi-dependencies]
 cityscapesscripts = ">=2.2.4, <3"
